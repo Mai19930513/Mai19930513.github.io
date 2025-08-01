@@ -226,9 +226,10 @@
                 padding: 0.6rem;
                 font-size: 0.8rem;
             }
+
             /* 隐藏地区代码 */
             th:nth-child(3),
-            td:nth-child(3){
+            td:nth-child(3) {
                 /* 隐藏测试版本号说明 */
                 display: none;
             }
@@ -444,7 +445,7 @@
                         <th>地区名称</th>
                         <th>最新正式版</th>
                         <th>最新测试版</th>
-                        <th>测试版上线时间</th>
+                        <th id="sortUpdateTime" class="sortable">测试版上线时间</th>
                         <th>测试版本号说明</th>
                     </tr>
                 </thead>
@@ -469,6 +470,7 @@
                     this.isLoading = false; // 是否正在加载数据
                     this.filters = { model: '', region: '' }; // 筛选条件
                     this.sortOrder = 'desc'; // 默认排序顺序为降序
+                    this.sortKey = 'model';
                     this.copyEventBound = false; // 事件委托标记
                     this.initFilters();
                     this.loadData();
@@ -477,7 +479,48 @@
                     this.addCopyEvent(); // 只需绑定一次事件委托
                     this.checkAutoLoad(); // 页面初始化时检测
                 }
+                initSortListeners() {
+                    const sortModelHeader = document.getElementById('sortModel');
+                    const sortUpdateTimeHeader = document.getElementById('sortUpdateTime'); // 新增
 
+                    sortModelHeader.addEventListener('click', () => {
+                        this.sortKey = 'model';
+                        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                        sortModelHeader.classList.toggle('desc', this.sortOrder === 'desc');
+                        sortUpdateTimeHeader.classList.remove('desc');
+                        this.sortData('model', this.sortOrder);
+                        this.resetTable();
+                    });
+
+                    sortUpdateTimeHeader.addEventListener('click', () => {
+                        this.sortKey = 'updateTime';
+                        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                        sortUpdateTimeHeader.classList.toggle('desc', this.sortOrder === 'desc');
+                        sortModelHeader.classList.remove('desc');
+                        this.sortData('updateTime', this.sortOrder);
+                        this.resetTable();
+                    });
+                }
+                sortData(key, order) {
+                    this.processedData.sort((a, b) => {
+                        let valueA = a[key];
+                        let valueB = b[key];
+                        // 针对时间字段做特殊处理
+                        if (key === 'updateTime') {
+                            // 统一为时间戳，未知排最后
+                            valueA = Date.parse(valueA) || 0;
+                            valueB = Date.parse(valueB) || 0;
+                        } else {
+                            valueA = valueA.toLowerCase();
+                            valueB = valueB.toLowerCase();
+                        }
+                        if (order === 'asc') {
+                            return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+                        } else {
+                            return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+                        }
+                    });
+                }
                 async loadData() {
                     try {
                         const response = await fetch(DATA_URL)
@@ -653,42 +696,6 @@
                         // 重置并重新渲染表格
                         this.resetTable();
                     }, 300));
-                }
-
-                // 初始化排序事件监听器
-                initSortListeners() {
-                    const sortModelHeader = document.getElementById('sortModel');
-                    sortModelHeader.addEventListener('click', () => {
-                        // 切换排序顺序
-                        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-
-                        // 更新箭头样式
-                        if (this.sortOrder === 'asc') {
-                            sortModelHeader.classList.remove('desc');
-                        } else {
-                            sortModelHeader.classList.add('desc');
-                        }
-
-                        // 按设备型号排序
-                        this.sortData('model', this.sortOrder);
-
-                        // 重新渲染表格
-                        this.resetTable();
-                    });
-                }
-
-                // 排序数据
-                sortData(key, order) {
-                    this.processedData.sort((a, b) => {
-                        const valueA = a[key].toLowerCase();
-                        const valueB = b[key].toLowerCase();
-
-                        if (order === 'asc') {
-                            return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-                        } else {
-                            return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
-                        }
-                    });
                 }
 
                 resetTable() {
