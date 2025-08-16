@@ -551,7 +551,7 @@
                             return;
                         }
                         Object.entries(regions).forEach(([regionCode, details]) => {
-                            if (!details || !details.最新正式版 || !details.最新测试版) {
+                            if (!details || !details.最新正式版 || !details.常规更新测试版) {
                                 console.warn('跳过无效数据:', { model, regionCode, details });
                                 return; // 跳过无效数据
                             }
@@ -561,8 +561,10 @@
                                 regionName: details.地区,
                                 official: this.parseVersion(details.最新正式版),
                                 official_full: details.最新正式版,
-                                beta: this.parseVersion(details.最新测试版),
-                                beta_full: details.最新测试版,
+                                major: this.parseVersion(details.大版本测试版),
+                                major_full: details.大版本测试版,
+                                minor: this.parseVersion(details.常规更新测试版),
+                                minor_full: details.常规更新测试版,
                                 description: details.最新版本号说明,
                                 deviceName: details.机型,
                                 updateTime: details.最新测试版上传时间,
@@ -626,13 +628,21 @@
                         <td>${item.model}</td>
                         <td>${item.regionCode}</td>
                         <td>${item.regionName}</td>
-                        <td title="${item.official_full || '无版本号'}">
-                            ${item.official ? `<a href="https://samfw.com/firmware/${item.model}/${item.regionCode}/${item.official}" target="_blank" class="version-badge official-badge">${item.official}</a>` : '-'}
-                            <div class="android_os">Android:${item.stableOS || '未知'}</div>
+                        <td style="min-width:180; vertical-align:middle; ">
+                            <div style="margin-bottom:0.5em;">
+                                ${item.official ? `<a href="https://samfw.com/firmware/${item.model}/${item.regionCode}/${item.official}" target="_blank" class="version-badge official-badge">${item.official}</a>` : '-'}
+                            </div>
+                            <div class="android_os" style="margin-bottom:0.2em;">Android OS:${item.stableOS || '未知'}</div>
                         </td>
-                        <td title="${item.beta_full || '无版本号'}" class="copyable">
-                            ${item.beta ? `<span class="version-badge beta-badge">${item.beta}</span>` : '-'}
-                            <div class="android_os">Android:${item.devOS || '未知'}</div>
+                        <td style="min-width:180px; vertical-align:middle; ">
+                            <div>
+                                <span style="font-weight:bold;color:#4a90e2;display:inline-block;text-align:right;">日常更新(OS:${item.stableOS || '未知'})：</span>
+                                ${item.minor ? `<span class="version-badge beta-badge">${item.minor}</span>` : '-'}
+                            </div>
+                            <div>
+                                <span style="font-weight:bold;color:#6c5ce7;display:inline-block;text-align:right;">下个版本(OS:${item.devOS || '未知'})：</span>
+                                ${item.major ? `<span class="version-badge beta-badge">${item.major}</span>` : '-'}
+                            </div>
                         </td>
                         <td>${item.updateTime || '未知'}</td>
                         <td>${item.description}</td>
