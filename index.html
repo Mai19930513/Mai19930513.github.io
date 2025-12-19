@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三星固件版本查询系统</title>
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>三星固件版本查询系统</title>
+        <style>
         :root {
             --primary-color: #4a90e2;
             --secondary-color: #6c5ce7;
@@ -412,53 +412,56 @@
             /* 可选：加点阴影和间距 */
         }
     </style>
-</head>
+    </head>
 
-<body>
-    <div class="container">
-        <h1><i class="title"></i>三星测试版固件版本查询</h1>
-        <div id="lastUpdate" class="last-update"></div>
-        <div class="filters">
-            <div class="filter-group">
-                <i class="fas fa-search"></i>
-                <input type="text" id="modelFilter" placeholder="输入设备型号(如:SM-S9280)">
+    <body>
+        <div class="container">
+            <h1><i class="title"></i>三星测试版固件版本查询</h1>
+            <div id="lastUpdate" class="last-update"></div>
+            <div class="filters">
+                <div class="filter-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="modelFilter"
+                        placeholder="输入设备型号(如:SM-S9280)">
+                </div>
+                <div class="filter-group">
+                    <i class="fas fa-globe-asia"></i>
+                    <input type="text" id="regionFilter"
+                        placeholder="输入地区代码(如:CHC)">
+                </div>
+                <!-- 新增：清空按钮 -->
+                <div class="filter-group">
+                    <button id="clearFilters" class="clear-btn" title="清空筛选">
+                        <i class="fas fa-times"></i> 清空
+                    </button>
+                </div>
             </div>
-            <div class="filter-group">
-                <i class="fas fa-globe-asia"></i>
-                <input type="text" id="regionFilter" placeholder="输入地区代码(如:CHC)">
+
+            <div class="table-container">
+                <table id="firmwareTable">
+                    <thead>
+                        <tr>
+                            <th>设备名称</th>
+                            <th id="sortModel" class="sortable">设备型号</th>
+                            <th>地区代码</th>
+                            <th>地区名称</th>
+                            <th>最新正式版</th>
+                            <th>最新测试版</th>
+                            <th id="sortUpdateTime"
+                                class="sortable">测试版上线时间</th>
+                            <th>测试版本号说明</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="no-results" id="noResults">
+                    <i></i> 没有找到匹配的结果
+                </div>
             </div>
-            <!-- 新增：清空按钮 -->
-            <div class="filter-group">
-                <button id="clearFilters" class="clear-btn" title="清空筛选">
-                    <i class="fas fa-times"></i> 清空
-                </button>
-            </div>
+
         </div>
 
-        <div class="table-container">
-            <table id="firmwareTable">
-                <thead>
-                    <tr>
-                        <th>设备名称</th>
-                        <th id="sortModel" class="sortable">设备型号</th>
-                        <th>地区代码</th>
-                        <th>地区名称</th>
-                        <th>最新正式版</th>
-                        <th>最新测试版</th>
-                        <th id="sortUpdateTime" class="sortable">测试版上线时间</th>
-                        <th>测试版本号说明</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <div class="no-results" id="noResults">
-                <i></i> 没有找到匹配的结果
-            </div>
-        </div>
-
-    </div>
-
-    <script>
+        <script>
         document.addEventListener('DOMContentLoaded', () => {
             const timestamp = Date.now()
             const DATA_URL = `https://cdn.jsdelivr.net/gh/Mai19930513/SamsungTestFirmwareVersionDecrypt/firmware_mini.json?v=${timestamp}`;
@@ -628,10 +631,18 @@
                         <td>${item.model}</td>
                         <td>${item.regionCode}</td>
                         <td>${item.regionName}</td>
-                        <td style="min-width:180; vertical-align:middle;">
-                            <div style="margin-bottom:0.5em;">
-                                ${item.official ? `<a href="https://samfw.com/firmware/${item.model}/${item.regionCode}/${item.official}" target="_blank" class="version-badge official-badge">${item.official}</a>` : '-'}
+                        <td style="min-width:180px; vertical-align:middle;">
+                            <div style="margin-bottom:0.5em; display:flex; align-items:center; justify-content:center; gap:8px;">
+                                ${item.official ? `<a href="https://samfw.com/firmware/${item.model}/${item.regionCode}/${item.official}" target="_blank" rel="noopener noreferrer" class="version-badge official-badge">${item.official}</a>` : '-'}
+                                <a href="https://doc.samsungmobile.com/${item.model}/${item.regionCode}/doc.html" target="_blank" rel="noopener noreferrer" title="查看更新日志">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007bff" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                                    <circle cx="8" cy="8" r="7" />
+                                    <path d="M8 4V4.5" stroke-linecap="round"/>
+                                    <path d="M8 7V12" stroke-linecap="round"/>
+                                    </svg>
+                                </a>
                             </div>
+                            
                             <div class="android_os" style="margin-bottom:0.2em;">Android OS:${item.stableOS || '未知'}</div>
                         </td>
                         <td style="min-width:180px; vertical-align:middle;text-align:left" title="${item.beta_full || '无版本号'}" class="copyable">
@@ -797,6 +808,6 @@
             new FirmwareTable();
         });
     </script>
-</body>
+    </body>
 
 </html>
