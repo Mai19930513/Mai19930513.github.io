@@ -606,15 +606,16 @@
                 renderTable() {
                     if (this.isLoading) return; // 防止重复加载
                     this.isLoading = true;
-                    // 先移除已存在的“已到最后”提示行
+                    // 先移除已存在的"已到最后"提示行
                     const lastTipRow = this.tableBody.querySelector('tr[data-tip="end"]');
                     if (lastTipRow) lastTipRow.remove();
 
                     // 应用筛选条件
                     const filteredData = this.processedData.filter(item => {
-                        const modelMatch = item.model.toLowerCase().includes(this.filters.model.toLowerCase());
+                        const modelMatch = this.matchesFilter(item.model, this.filters.model);
+                        const deviceNameMatch = this.matchesFilter(item.deviceName, this.filters.model);
                         const regionMatch = item.regionCode.toLowerCase().includes(this.filters.region.toLowerCase());
-                        return modelMatch && regionMatch;
+                        return (modelMatch || deviceNameMatch) && regionMatch;
                     });
 
                     // 获取当前需要加载的数据
@@ -782,6 +783,20 @@
                             popup.remove();
                         });
                     }, 2000);
+                }
+
+                // 新增：灵活的筛选匹配函数，支持正则和普通文本
+                matchesFilter(text, filter) {
+                    if (!filter) return true;
+                    
+                    try {
+                        // 尝试作为正则表达式处理
+                        const regex = new RegExp(filter, 'i'); // 'i' 标志表示大小写不敏感
+                        return regex.test(text);
+                    } catch (e) {
+                        // 如果正则表达式无效，则作为普通文本处理（大小写不敏感）
+                        return text.toLowerCase().includes(filter.toLowerCase());
+                    }
                 }
 
             }
