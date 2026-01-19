@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samsung 固件更新中心 (多选版)</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --secondary: #6c757d;
+            --bg-body: #f2f4f8;
+            --bg-card: #ffffff;
+            --text-main: #212529;
+            --text-sub: #868e96;
+            --border: #dee2e6;
+            --major-gold: #ffc107;
+            --major-bg: #fffbf0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: 'SamsungOne', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow-y: scroll;
+        }
+
+        /* === Header === */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 15px 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .brand-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        /* === 自定义多选下拉框样式 === */
+        .multiselect {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-box {
+            position: relative;
+            padding: 12px 16px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .select-box:hover {
+            border-color: var(--primary);
+        }
+
+        .select-box.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+        }
+
+        .selected-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90%;
+            color: var(--text-main);
+        }
+
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            top: 110%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 2000;
+            padding: 8px 0;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-search {
+            padding: 8px 12px;
+            margin: 0 8px 8px 8px;
+            width: calc(100% - 16px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-item.header-item {
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 4px;
+        }
+
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item.checked .checkbox-custom {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .dropdown-item.checked .checkbox-custom::after {
+            content: '✓';
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 普通 Select */
+        select.std-select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background-color: #fff;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px top 50%;
+            background-size: 10px auto;
+        }
+
+        /* 统计栏 */
+        .stats-bar {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-count { font-weight: 700; color: var(--primary); }
+
+        /* === Timeline CSS (Previous Logic with Fixes) === */
+        .main-container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            position: relative;
+            min-height: 500px;
+        }
+
+        /* 修复后的竖线位置：留足左侧空间 */
+        .timeline-spine {
+            position: absolute;
+            left: 90px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #e9ecef;
+            z-index: 0;
+        }
+
+        /* 修复后的日期分组 */
+        .date-section {
+            position: relative;
+            margin-bottom: 40px;
+            padding-left: 120px; 
+        }
+
+        /* 修复后的日期标签 */
+        .date-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 80px; 
+            text-align: right;
+            padding-top: 12px;
+            padding-right: 15px; 
+            box-sizing: border-box;
+        }
+
+        .date-day { font-size: 1.4rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+        .date-ym { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; font-weight: 600; }
+
+        /* 修复后的圆点位置 */
+        .timeline-dot {
+            position: absolute;
+            left: 82px; 
+            top: 15px;
+            width: 19px;
+            height: 19px;
+            background: var(--bg-body);
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .date-section.has-major .timeline-dot {
+            border-color: var(--major-gold);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+            transform: scale(1.2);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid transparent;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+        .card.is-major { background: var(--major-bg); border: 1px solid var(--major-gold); }
+
+        .major-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--major-gold);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        /* 动态显示的机型标签 */
+        .device-badge {
+            background: #343a40;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: none; /* 默认隐藏，多选时显示 */
+        }
+        
+        .card.is-major .device-badge { background: #b78a02; }
+
+        .version-pill { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+
+        .build-row { margin-bottom: 8px; font-size: 0.9rem; color: var(--text-main); }
+        .code-snippet { font-family: 'Consolas', monospace; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; color: #d63384; }
+
+        .meta-row {
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: var(--text-sub); }
+        .empty-icon { font-size: 3rem; margin-bottom: 20px; opacity: 0.5; }
+
+        @media (max-width: 768px) {
+            .timeline-spine { left: 20px; }
+            .date-section { padding-left: 50px; }
+            .date-label { position: relative; width: 100%; text-align: left; margin-bottom: 10px; padding-top: 0; display: flex; align-items: baseline; gap: 10px; padding-right: 0; }
+            .timeline-dot { left: 12px; top: 5px; width: 15px; height: 15px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .filters-row { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="brand-row">
+            <h1>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                Firmware Timeline
+            </h1>
+            <div id="loadingStatus" style="font-size:0.8rem; color:var(--text-sub)">加载中...</div>
+        </div>
+
+        <div class="filters-row">
+            <!-- 自定义多选下拉框 -->
+            <div class="filter-group multiselect" id="multiSelectComponent">
+                <div class="select-box" onclick="toggleDropdown(event)">
+                    <span class="selected-text" id="modelSelectText">📱 全选 (所有机型)</span>
+                    <span style="font-size: 0.8rem; color: #999;">▼</span>
+                </div>
+                <div class="dropdown-list" id="modelDropdownList">
+                    <input type="text" class="dropdown-search" placeholder="🔍 搜索机型..." onkeyup="filterDropdown(this.value)" onclick="event.stopPropagation()">
+                    
+                    <div class="dropdown-item header-item checked" id="selectAllOption" onclick="toggleSelectAll()">
+                        <div class="checkbox-custom"></div>
+                        <span>选择所有机型 (All Models)</span>
+                    </div>
+                    
+                    <div id="modelListContainer">
+                        <!-- JS 填充 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统版本筛选 (单选) -->
+            <div class="filter-group">
+                <select id="versionFilter" class="std-select">
+                    <option value="ALL">🤖 所有 Android 版本</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <span id="resultCount">正在计算...</span>
+            <span id="genTime"></span>
+        </div>
+    </div>
+</header>
+
+<div class="main-container" id="container">
+    <div class="timeline-spine"></div>
+    <div id="content"></div>
+</div>
+
+<script>
+    // ================= 全局状态 =================
+    let rawData = null; 
+    let processedLogs = [];
+    
+    // 多选状态: Set 存储 "modelId|region" 字符串
+    // 如果 Set 包含 'ALL'，则表示全选
+    let selectedModels = new Set(['ALL']); 
+    
+    const dom = {
+        modelText: document.getElementById('modelSelectText'),
+        modelList: document.getElementById('modelListContainer'),
+        dropdown: document.getElementById('modelDropdownList'),
+        selectAllOpt: document.getElementById('selectAllOption'),
+        verSelect: document.getElementById('versionFilter'),
+        content: document.getElementById('content'),
+        countLabel: document.getElementById('resultCount'),
+        statusLabel: document.getElementById('loadingStatus'),
+        timeLabel: document.getElementById('genTime')
+    };
+
+    // ================= 初始化 =================
+    async function init() {
+        try {
+            const res = await fetch("https://cdn.jsdelivr.net/gh/Mai19930513/SamsungTestFirmwareVersionDecrypt/更新时间线.json", {cache: "no-store"});
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            
+            rawData = await res.json();
+            dom.statusLabel.textContent = "就绪";
+            dom.timeLabel.textContent = `更新于: ${rawData['生成时间']}`;
+
+            // 1. 预处理数据
+            processData();
+            
+            // 2. 填充筛选器
+            populateFilters();
+
+            // 3. 渲染
+            render();
+
+            // 4. 事件监听 (点击外部关闭下拉)
+            document.addEventListener('click', function(event) {
+                const isClickInside = document.getElementById('multiSelectComponent').contains(event.target);
+                if (!isClickInside) {
+                    dom.dropdown.classList.remove('show');
+                    document.querySelector('.select-box').classList.remove('active');
+                }
+            });
+
+            dom.verSelect.addEventListener('change', render);
+
+        } catch (err) {
+            console.error(err);
+            dom.content.innerHTML = `<div class="empty-state"><h3>加载失败</h3><p>${err.message}</p><p>请使用 Live Server 运行。</p></div>`;
+        }
+    }
+
+    // ================= 数据处理 =================
+    function processData() {
+        processedLogs = [];
+        const models = rawData.models;
+
+        for (const [mid, mData] of Object.entries(models)) {
+            const name = mData.name;
+            const ccs = mData.cc;
+
+            for (const [region, rData] of Object.entries(ccs)) {
+                const validLogs = rData.logs.filter(l => l['发布日期']);
+                validLogs.sort((a, b) => new Date(a['发布日期']) - new Date(b['发布日期']));
+
+                let lastVer = 0;
+                validLogs.forEach(log => {
+                    const verNum = extractAndroidVer(log['Android版本']);
+                    let isMajor = false;
+                    if (verNum > 0) {
+                        if (lastVer === 0) lastVer = verNum;
+                        else if (verNum > lastVer) { isMajor = true; lastVer = verNum; }
+                    }
+
+                    processedLogs.push({
+                        ...log,
+                        modelId: mid,
+                        modelName: name,
+                        region: region,
+                        uniqueKey: `${mid}|${region}`, // 唯一标识
+                        fullModelLabel: `${name} (${mid}) - ${region}`,
+                        androidVerNum: verNum,
+                        timestamp: new Date(log['发布日期']).getTime(),
+                        isMajor: isMajor
+                    });
+                });
+            }
+        }
+        processedLogs.sort((a, b) => b.timestamp - a.timestamp);
+    }
+
+    function extractAndroidVer(str) {
+        if (!str) return 0;
+        const m = str.match(/Android\s*(\d+)/i);
+        return m ? parseInt(m[1]) : 0;
+    }
+
+    function extractVerStr(str) {
+        const m = str.match(/Android\s*\d+/i);
+        return m ? m[0] : str;
+    }
+
+    // ================= 多选组件逻辑 =================
+    
+    // 填充下拉列表
+    function populateFilters() {
+        // 1. 获取所有唯一的机型组合
+        const modelMap = new Map(); 
+        processedLogs.forEach(l => {
+            if (!modelMap.has(l.uniqueKey)) {
+                modelMap.set(l.uniqueKey, l.fullModelLabel);
+            }
+        });
+
+        const sortedModels = Array.from(modelMap.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+
+        // 生成 DOM
+        dom.modelList.innerHTML = '';
+        sortedModels.forEach(([key, label]) => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.dataset.value = key;
+            item.innerHTML = `<div class="checkbox-custom"></div><span>${label}</span>`;
+            item.onclick = (e) => toggleItem(key, item, e);
+            dom.modelList.appendChild(item);
+        });
+
+        // 2. 填充版本筛选
+        const verSet = new Set();
+        processedLogs.forEach(l => { if (l.androidVerNum > 0) verSet.add(l.androidVerNum); });
+        const sortedVers = Array.from(verSet).sort((a, b) => b - a);
+        sortedVers.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = `Android ${v}`;
+            dom.verSelect.appendChild(opt);
+        });
+        
+        updateSelectText();
+    }
+
+    // 切换下拉框显示
+    function toggleDropdown(e) {
+        dom.dropdown.classList.toggle('show');
+        document.querySelector('.select-box').classList.toggle('active');
+    }
+
+    // 全选/取消全选
+    function toggleSelectAll() {
+        if (selectedModels.has('ALL')) {
+            // 如果已经是全选，则清空
+            selectedModels.clear(); 
+            dom.selectAllOpt.classList.remove('checked');
+            // 清空下面所有的选中状态
+            document.querySelectorAll('#modelListContainer .dropdown-item').forEach(el => el.classList.remove('checked'));
+        } else {
+            // 否则全选
+            selectedModels.clear();
+            selectedModels.add('ALL');
+            dom.selectAllOpt.classList.add('checked');
+            // 视觉上移除下面所有选中（因为ALL覆盖了），或者全部加上checked也行，但逻辑上存ALL即可
+            document.querySelectorAll('#modelListContainer .dropdown-item').forEach(el => el.classList.remove('checked'));
+        }
+        updateSelectText();
+        render();
+    }
+
+    // 切换单个选项
+    function toggleItem(key, element, event) {
+        event.stopPropagation(); // 防止冒泡关闭下拉
+
+        // 如果当前是“全选”状态，先清除ALL，并把其他所有项(除了当前点击的这个)加进去？
+        // 或者更简单的逻辑：
+        // 点击单个时，如果当前是ALL，则逻辑变为：清空ALL，选中该项？不对，这是单选逻辑。
+        // 多选逻辑：如果当前是ALL，点击某项意味着用户想"排除"某项？通常比较复杂。
+        // 简化逻辑：点击单个时，如果当前是ALL，自动取消ALL，只选中当前点击的项（从全选变单选）。
+        // 或者是：点击单个时，如果当前是ALL，取消ALL，将列表里除了当前项之外的所有项都选中？（反选逻辑，太复杂）
+        
+        // 采用最直观逻辑：如果当前是ALL，点击任何子项，则清除ALL，只选中该子项（重新开始选择）。
+        
+        if (selectedModels.has('ALL')) {
+            selectedModels.clear();
+            dom.selectAllOpt.classList.remove('checked');
+            // 选中当前点击的
+            selectedModels.add(key);
+            element.classList.add('checked');
+        } else {
+            // 普通切换
+            if (selectedModels.has(key)) {
+                selectedModels.delete(key);
+                element.classList.remove('checked');
+            } else {
+                selectedModels.add(key);
+                element.classList.add('checked');
+            }
+        }
+
+        // 如果一个都没选，也许应该自动回退到ALL？或者保持空？保持空比较好，render处理空状态。
+        // 如果所有项都被手动选中了，是否自动变回ALL？可选优化。
+        
+        updateSelectText();
+        render();
+    }
+
+    // 更新顶部文字
+    function updateSelectText() {
+        if (selectedModels.has('ALL')) {
+            dom.modelText.textContent = "📱 全选 (所有机型)";
+            return;
+        }
+
+        if (selectedModels.size === 0) {
+            dom.modelText.textContent = "请选择机型...";
+            return;
+        }
+
+        if (selectedModels.size === 1) {
+            // 获取名称
+            const key = Array.from(selectedModels)[0];
+            const item = document.querySelector(`.dropdown-item[data-value="${key}"] span`);
+            dom.modelText.textContent = item ? item.textContent : key;
+        } else {
+            dom.modelText.textContent = `已选 ${selectedModels.size} 个机型`;
+        }
+    }
+
+    // 搜索功能
+    function filterDropdown(text) {
+        const val = text.toLowerCase();
+        const items = document.querySelectorAll('#modelListContainer .dropdown-item');
+        items.forEach(item => {
+            const txt = item.innerText.toLowerCase();
+            item.style.display = txt.includes(val) ? 'flex' : 'none';
+        });
+    }
+
+    // ================= 渲染逻辑 =================
+    function render() {
+        const verVal = dom.verSelect.value;
+        const isAllModels = selectedModels.has('ALL');
+        const hasSelection = selectedModels.size > 0;
+
+        // 1. 过滤
+        const filtered = processedLogs.filter(log => {
+            // 机型过滤
+            let matchModel = false;
+            if (isAllModels) {
+                matchModel = true;
+            } else if (hasSelection) {
+                if (selectedModels.has(log.uniqueKey)) matchModel = true;
+            } else {
+                matchModel = false; // 没选机型
+            }
+
+            // 版本过滤
+            let matchVer = true;
+            if (verVal !== 'ALL') {
+                if (log.androidVerNum != parseInt(verVal)) matchVer = false;
+            }
+
+            return matchModel && matchVer;
+        });
+
+        dom.countLabel.innerHTML = `找到 <span class="result-count">${filtered.length}</span> 条记录`;
+        dom.content.innerHTML = '';
+
+        if (!hasSelection) {
+            dom.content.innerHTML = `<div class="empty-state"><h3>请选择至少一个机型</h3></div>`;
+            return;
+        }
+
+        if (filtered.length === 0) {
+            dom.content.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><h3>无匹配记录</h3></div>`;
+            return;
+        }
+
+        // 2. 分组
+        const grouped = {};
+        filtered.forEach(log => {
+            if (!grouped[log['发布日期']]) grouped[log['发布日期']] = [];
+            grouped[log['发布日期']].push(log);
+        });
+
+        // 3. 构建 DOM
+        const dates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+        dates.forEach(dateStr => {
+            const logsInDate = grouped[dateStr];
+            logsInDate.sort((a, b) => a.modelName.localeCompare(b.modelName));
+            
+            const hasMajor = logsInDate.some(l => l.isMajor);
+            const dObj = new Date(dateStr);
+
+            const section = document.createElement('div');
+            section.className = `date-section ${hasMajor ? 'has-major' : ''}`;
+
+            section.innerHTML = `
+                <div class="date-label">
+                    <div class="date-day">${dObj.getDate()}</div>
+                    <div class="date-ym">${dObj.getFullYear()}.${dObj.getMonth()+1}</div>
+                </div>
+                <div class="timeline-dot"></div>
+                <div class="cards-grid"></div>
+            `;
+
+            const grid = section.querySelector('.cards-grid');
+
+            logsInDate.forEach(log => {
+                const card = document.createElement('div');
+                card.className = `card ${log.isMajor ? 'is-major' : ''}`;
+                
+                // 逻辑：如果选了多个机型（或全选），则必须显示 Badge 区分
+                // 如果只选了1个机型，Badge 可以隐藏让界面更干净
+                const showBadge = selectedModels.size > 1 || selectedModels.has('ALL');
+                
+                const badgeHtml = showBadge 
+                    ? `<span class="device-badge" style="display:inline-block">${log.modelName} <span style="opacity:0.7">| ${log.region}</span></span>` 
+                    : '';
+
+                const majorHtml = log.isMajor ? `<div class="major-badge">MAJOR</div>` : '';
+
+                card.innerHTML = `
+                    ${majorHtml}
+                    <div class="card-header">
+                        ${badgeHtml}
+                        <span class="version-pill">${extractVerStr(log['Android版本'])}</span>
+                    </div>
+                    <div class="build-row">版本: <span class="code-snippet">${log['版本号']}</span></div>
+                    <div class="meta-row">
+                        <svg style="width:14px;height:14px;fill:#28a745" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                        ${log['安全补丁级别']} 补丁
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            dom.content.appendChild(section);
+        });
+    }
+
+    // 启动
+    init();
+
+</script>
+</body>
+</html>
