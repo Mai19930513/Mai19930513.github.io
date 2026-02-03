@@ -442,7 +442,7 @@
     // ================= 初始化 =================
     async function init() {
         try {
-            const res = await fetch("https://cdn.jsdelivr.net/gh/Mai19930513/SamsungTestFirmwareVersionDecrypt/更新时间线.json", {cache: "no-store"});
+            const res = await fetch("https://gh-proxy.org/https://raw.githubusercontent.com/Mai19930513/SamsungTestFirmwareVersionDecrypt/refs/heads/master/%E6%9B%B4%E6%96%B0%E6%97%B6%E9%97%B4%E7%BA%BF.json", {cache: "no-store"});
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
             rawData = await res.json();
