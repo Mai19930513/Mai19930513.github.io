@@ -147,7 +147,6 @@
                 top: 0;
                 width: max-content;
                 z-index: 3;
-                pointer-events: none;
             }
             .st-dot {
                 position: absolute;
@@ -166,6 +165,17 @@
                 box-shadow:
                     0 0 0 4px #0a1622,
                     0 0 12px #22d3ee;
+            }
+            .st-name {
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .st-dot:hover {
+                transform: translate(-50%, 0) scale(1.3);
+                background: #67e8f9 !important;
+            }
+            .st-name:hover .name-chunk {
+                color: #08deff;
             }
             .st-names {
                 position: absolute;
@@ -1081,6 +1091,27 @@
                     dot.className = `st-dot ${i + 1 === route.stationindex ? "current" : ""}`;
                     dot.style.left = xs[i] + "px";
                     dot.innerHTML = `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#0a1622;font-size:10px;font-weight:700;">${i + 1}</span>`;
+
+                    // --- 点击处理逻辑 ---
+                    const handleStationClick = () => {
+                        if (dom.inputStation.value === s.name) return; // 已经是当前站则跳过
+
+                        // 1. 更新下拉框的值
+                        dom.inputStation.value = s.name;
+
+                        // 2. 静默更新 URL 参数
+                        const url = new URL(window.location);
+                        url.searchParams.set("station", s.name);
+                        window.history.replaceState({}, "", url.toString());
+
+                        // 3. 立即触发一次数据刷新（调用后面暴露的接口）
+                        if (window.triggerManualRefresh) {
+                            window.triggerManualRefresh();
+                        }
+                    };
+                    // 为圆点添加点击
+                    dot.style.cursor = "pointer"; // 增加手型指示
+                    dot.onclick = handleStationClick;
                     dotsEl.appendChild(dot);
 
                     // Name
@@ -1132,7 +1163,9 @@
                             metroContainer.appendChild(metroSpan);
                         });
                         name.appendChild(metroContainer);
+                        name.style.cursor = "pointer";
                     }
+                    name.onclick = handleStationClick;
                     namesEl.appendChild(name);
                 });
 
@@ -1409,12 +1442,13 @@
                 }
                 // 运行循环
                 const loop = async () => {
+                    const currentStation = dom.inputStation.value;
                     try {
                         const data = await cl.getTripInfo(
                             config.city,
                             config.line,
                             config.reverse,
-                            config.station,
+                            currentStation,
                         );
                         if (data) {
                             if (config.outputJson) {
@@ -1449,7 +1483,7 @@
                         console.error(e);
                     }
                 };
-
+                window.triggerManualRefresh = loop;
                 loop();
                 if (refreshTimer) clearInterval(refreshTimer);
                 refreshTimer = setInterval(loop, 30000); // 30秒刷新一次
