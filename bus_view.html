@@ -441,10 +441,6 @@
                 color: #67e8f9;
                 margin-bottom: 4px;
             }
-            .info-sub {
-                font-size: 13px;
-                color: #94a3b8;
-            }
 
             /* 返回按钮 */
             .btn-back {
@@ -477,7 +473,6 @@
                 <!-- 新增：线路信息展示区域 -->
                 <div id="line-info-header">
                     <div class="info-title" id="info-line-name">--</div>
-                    <div class="info-sub" id="info-direction">--</div>
                 </div>
 
                 <div class="form-row">
@@ -487,16 +482,16 @@
                             type="text"
                             id="input-city"
                             class="form-control"
-                            placeholder="例如: 上海"
+                            placeholder="例如: 重庆"
                         />
                     </div>
                     <div class="form-group">
-                        <label>线路</label>
+                        <label>公交线路</label>
                         <input
                             type="text"
                             id="input-line"
                             class="form-control"
-                            placeholder="例如: 71"
+                            placeholder="例如: 888"
                         />
                     </div>
                 </div>
@@ -512,13 +507,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>当前站点</label>
+                    <label>当前公交站</label>
                     <select id="input-station" class="form-control" disabled>
                         <option value="">请输入城市和线路...</option>
                     </select>
                 </div>
 
-                <!-- 这里的获取按钮被移除了，改为自动触发 -->
                 <button id="btn-start" class="action-btn btn-success hidden">
                     开始显示实时监控
                 </button>
@@ -1154,7 +1148,6 @@
                 errMsg: document.getElementById("error-msg"),
                 header: document.getElementById("line-info-header"),
                 headerTitle: document.getElementById("info-line-name"),
-                headerSub: document.getElementById("info-direction"),
             };
 
             let refreshTimer = null;
@@ -1208,8 +1201,7 @@
                     // 成功：更新 UI
                     // A. 更新标题
                     dom.header.classList.add("active");
-                    dom.headerTitle.textContent = `${lineInfo.name}`;
-                    dom.headerSub.textContent = `${lineInfo.startSn} ➡ ${lineInfo.endSn}`;
+                    dom.headerTitle.textContent = `${lineInfo.name}路 ${lineInfo.startSn} ➡ ${lineInfo.endSn}`;
 
                     // B. 填充 Select
                     const stations = detailRes.data.stations;
@@ -1287,7 +1279,7 @@
 
                 loop();
                 if (refreshTimer) clearInterval(refreshTimer);
-                refreshTimer = setInterval(loop, 15000); // 15秒刷新一次
+                refreshTimer = setInterval(loop, 30000); // 30秒刷新一次
             }
 
             // 3. 事件绑定
@@ -1306,7 +1298,7 @@
                 const params = new URLSearchParams(window.location.search);
                 const pCity = params.get("city");
                 const pLine = params.get("line");
-                const pStation = params.get("station"); // 用户URL里填的站点
+                const pStation = params.get("station"); 
                 const pRev = params.get("reverse");
 
                 if (pCity && pLine) {
