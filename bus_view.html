@@ -517,10 +517,21 @@
                 <div class="form-group">
                     <div
                         class="checkbox-group"
-                        style="padding-top: 0; margin-bottom: 10px"
+                        style="padding-top: 0; margin-bottom: 10px; gap: 20px"
                     >
-                        <input type="checkbox" id="input-reverse" />
-                        <label for="input-reverse">反向 / 切换方向</label>
+                        <div
+                            style="display: flex; align-items: center; gap: 8px"
+                        >
+                            <input type="checkbox" id="input-reverse" />
+                            <label for="input-reverse">反向</label>
+                        </div>
+                        <!-- 新增 JSON 选项 -->
+                        <div
+                            style="display: flex; align-items: center; gap: 8px"
+                        >
+                            <input type="checkbox" id="input-json" />
+                            <label for="input-json">直接输出JSON</label>
+                        </div>
                     </div>
                 </div>
 
@@ -548,6 +559,21 @@
                 </button>
                 <!-- 挂载点 -->
                 <section id="mount"></section>
+                <pre
+                    id="json-display"
+                    class="hidden"
+                    style="
+                        background: #020617;
+                        color: #10b981;
+                        padding: 15px;
+                        border-radius: 8px;
+                        overflow: auto;
+                        font-family: monospace;
+                        font-size: 13px;
+                        border: 1px solid #1e293b;
+                        margin-top: 15px;
+                    "
+                ></pre>
             </div>
         </div>
         <script>
@@ -1183,6 +1209,8 @@
                 header: document.getElementById("line-info-header"),
                 headerTitle: document.getElementById("info-line-name"),
                 btnCopy: document.getElementById("btn-copy"),
+                inputJson: document.getElementById("input-json"),
+                jsonDisplay: document.getElementById("json-display"),
             };
 
             let refreshTimer = null;
@@ -1286,6 +1314,7 @@
                     line: dom.inputLine.value.trim(),
                     reverse: dom.inputReverse.checked ? "1" : "0",
                     station: dom.inputStation.value,
+                    outputJson: dom.inputJson.checked,
                 };
 
                 if (!config.city || !config.line || !config.station)
@@ -1296,15 +1325,53 @@
                 url.searchParams.set("line", config.line);
                 url.searchParams.set("station", config.station);
                 url.searchParams.set("reverse", config.reverse);
-
+                if (config.outputJson) url.searchParams.set("json", "1");
                 // 使用 replaceState 不会产生多余的历史记录，方便用户直接回退
                 window.history.replaceState({}, "", url.toString());
+                if (config.outputJson) {
+                    showError("正在获取 JSON 数据...");
+                    try {
+                        const data = await cl.getTripInfo(
+                            config.city,
+                            config.line,
+                            config.reverse,
+                            config.station,
+                        );
+                        // 彻底清除页面所有界面，只显示纯文本 JSON
+                        document.body.innerHTML = "";
+                        document.body.style.background = "#ffffff";
+                        document.body.style.color = "#000000";
+                        document.body.style.padding = "20px";
+                        document.body.style.margin = "0";
+
+                        const pre = document.createElement("pre");
+                        pre.style.whiteSpace = "pre-wrap";
+                        pre.style.wordBreak = "break-all";
+                        pre.textContent = JSON.stringify(data, null, 4);
+                        document.body.appendChild(pre);
+
+                        // 停止 JS 后续逻辑（因为界面已销毁）
+                        if (refreshTimer) clearInterval(refreshTimer);
+                        return;
+                    } catch (e) {
+                        document.body.innerText = "Error: " + e.message;
+                        return;
+                    }
+                }
                 // 切换视图
                 dom.form.classList.add("hidden");
                 dom.view.classList.remove("hidden");
-                dom.mount.innerHTML =
-                    '<div style="text-align:center;padding:20px;color:#94a3b8;">正在连接数据...</div>';
 
+                if (config.outputJson) {
+                    dom.mount.classList.add("hidden");
+                    dom.jsonDisplay.classList.remove("hidden");
+                    dom.jsonDisplay.textContent = "正在获取数据...";
+                } else {
+                    dom.mount.classList.remove("hidden");
+                    dom.jsonDisplay.classList.add("hidden");
+                    dom.mount.innerHTML =
+                        '<div style="text-align:center;padding:20px;color:#94a3b8;">正在连接数据...</div>';
+                }
                 // 运行循环
                 const loop = async () => {
                     try {
@@ -1315,21 +1382,35 @@
                             config.station,
                         );
                         if (data) {
-                            const card = ensureCard(data, dom.mount);
-                            // 如果是第一次加载，清空loading文字
-                            if (dom.mount.textContent.includes("正在连接")) {
-                                const loading = Array.from(
-                                    dom.mount.childNodes,
-                                ).find(
-                                    (n) =>
-                                        n.nodeType === 3 || n.tagName === "DIV",
+                            if (config.outputJson) {
+                                // JSON 模式：直接序列化并显示
+                                dom.jsonDisplay.textContent = JSON.stringify(
+                                    data,
+                                    null,
+                                    4,
                                 );
-                                if (loading && loading.className !== "card")
-                                    loading.remove();
+                            } else {
+                                // 图形模式
+                                const card = ensureCard(data, dom.mount);
+                                if (
+                                    dom.mount.textContent.includes("正在连接")
+                                ) {
+                                    const loading = Array.from(
+                                        dom.mount.childNodes,
+                                    ).find(
+                                        (n) =>
+                                            n.nodeType === 3 ||
+                                            n.tagName === "DIV",
+                                    );
+                                    if (loading && loading.className !== "card")
+                                        loading.remove();
+                                }
+                                updateCard(data, card);
                             }
-                            updateCard(data, card);
                         }
                     } catch (e) {
+                        if (config.outputJson)
+                            dom.jsonDisplay.textContent = "错误: " + e.message;
                         console.error(e);
                     }
                 };
@@ -1357,13 +1438,13 @@
                 const pLine = params.get("line");
                 const pStation = params.get("station");
                 const pRev = params.get("reverse");
-
+                const pJson = params.get("json");
                 if (pCity && pLine) {
                     // 1. 填充表单
                     dom.inputCity.value = pCity;
                     dom.inputLine.value = pLine;
                     if (pRev === "1") dom.inputReverse.checked = true;
-
+                    if (pJson === "1") dom.inputJson.checked = true;
                     // 2. 主动调用查询，并等待网络请求结束 (关键步骤)
                     // 注意：这里必须 await，否则下拉框还没数据就去选站点会失败
                     const success = await fetchLineStations(false);
