@@ -1511,7 +1511,7 @@
                     const configs = multiData.split(";");
 
                     for (const item of configs) {
-                        const parts = item.split("|");
+                        const parts = item.split(",");
                         if (parts.length < 3) continue;
                         let city = parts[0];
                         let line = parts[1];
@@ -1610,3 +1610,4 @@
         </script>
     </body>
 </html>
+
