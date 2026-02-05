@@ -688,8 +688,7 @@
             // 车来了 API 封装
             class CheLaile {
                 constructor() {
-                    const PROXY_BASE =
-                        "https://bus-proxy.netlify.app/proxy/";
+                    const PROXY_BASE = "https://bus-proxy.netlify.app/proxy/";
                     this.citylist_url =
                         PROXY_BASE +
                         "http://web.chelaile.net.cn/cdatasource/citylist";
@@ -1098,6 +1097,42 @@
                         grp.appendChild(sp);
                     });
                     name.appendChild(grp);
+                    if (s.metros && s.metros.length) {
+                        const metroContainer = document.createElement("div");
+                        metroContainer.style.display = "flex";
+                        metroContainer.style.flexDirection = "column";
+                        metroContainer.style.gap = "2px";
+                        metroContainer.style.writingMode = "horizontal-tb";
+                        metroContainer.style.marginTop = "2px";
+
+                        s.metros.forEach((metro) => {
+                            const metroSpan = document.createElement("span");
+                            // 去除空格
+                            const fullName = (metro.fullName || "").replace(
+                                /\s/g,
+                                "",
+                            );
+                            metroSpan.textContent = fullName;
+
+                            if (metro.color) {
+                                // 使用返回的 RGB 颜色
+                                metroSpan.style.backgroundColor =
+                                    "rgb(" + metro.color + ")";
+                                metroSpan.style.color = "#FFFFFF";
+                                metroSpan.style.padding = "2px 4px";
+                                metroSpan.style.borderRadius = "3px";
+                                metroSpan.style.display = "grid";
+                                // 保持内部文字竖排
+                                metroSpan.style.writingMode = "vertical-rl";
+                                metroSpan.style.textOrientation = "upright";
+                                metroSpan.style.fontSize = "8px";
+                                metroSpan.style.fontWeight = "bold";
+                                metroSpan.style.lineHeight = "1";
+                            }
+                            metroContainer.appendChild(metroSpan);
+                        });
+                        name.appendChild(metroContainer);
+                    }
                     namesEl.appendChild(name);
                 });
 
