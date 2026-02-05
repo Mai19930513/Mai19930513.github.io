@@ -945,10 +945,11 @@
                     card.id = `card-${route.lineCode}`;
                     card.className = "card";
                     card.innerHTML = `
-            <div class="card-update-time"></div>
+            
             <div class="card-head">
                 <div class="line-container">
                     <div class="line-title"></div>
+                    <div class="card-update-time"></div>
                     <div class="current-station"></div>
                     <div class="tips"></div>
                 </div>
@@ -997,7 +998,7 @@
             const updateCard = (route, card) => {
                 // Basic Info
                 card.querySelector(".card-update-time").textContent =
-                    `更新: ${route.updatetime}`;
+                    `更新于: ${route.updatetime}`;
                 card.querySelector(".line-title").textContent =
                     `${route.lineCode}路 ${route.lineName}`;
                 card.querySelector(".current-station").textContent =
