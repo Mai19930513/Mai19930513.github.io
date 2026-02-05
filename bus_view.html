@@ -452,7 +452,25 @@
                 padding: 8px 16px;
                 font-size: 14px;
             }
+            .btn-copy {
+                background: #0ea5e9;
+                color: white;
+                margin-bottom: 15px;
+                margin-left: 10px; /* 与返回按钮保持间距 */
+                display: inline-block;
+                width: auto;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
 
+            /* 手机端按钮并排处理 */
+            @media (max-width: 480px) {
+                .btn-back,
+                .btn-copy {
+                    padding: 8px 12px;
+                    font-size: 13px;
+                }
+            }
             /* 简单的淡入动画 */
             @keyframes fadeIn {
                 from {
@@ -522,7 +540,11 @@
             <!-- 监控视图容器 -->
             <div id="view-container" class="hidden">
                 <button id="btn-stop" class="action-btn btn-back">
-                    &lt; 返回重新查询
+                    &lt; 返回
+                </button>
+                <!-- 新增复制按钮 -->
+                <button id="btn-copy" class="action-btn btn-copy">
+                    复制链接
                 </button>
                 <!-- 挂载点 -->
                 <section id="mount"></section>
@@ -640,10 +662,17 @@
             // 车来了 API 封装
             class CheLaile {
                 constructor() {
-                    const PROXY_BASE = "https://chelaile.zard1028.workers.dev/proxy/";
-                    this.citylist_url = PROXY_BASE+"http://web.chelaile.net.cn/cdatasource/citylist";
-                    this.lineDetail = PROXY_BASE+"http://cdn.web.chelaileapp.cn/api/bus/line!encryptedLineDetail.action";
-                    this.queryLineUrl = PROXY_BASE+"http://web.chelaile.net.cn/api/bus/query!nSearch.action";
+                    const PROXY_BASE =
+                        "https://chelaile.zard1028.workers.dev/proxy/";
+                    this.citylist_url =
+                        PROXY_BASE +
+                        "http://web.chelaile.net.cn/cdatasource/citylist";
+                    this.lineDetail =
+                        PROXY_BASE +
+                        "http://cdn.web.chelaileapp.cn/api/bus/line!encryptedLineDetail.action";
+                    this.queryLineUrl =
+                        PROXY_BASE +
+                        "http://web.chelaile.net.cn/api/bus/query!nSearch.action";
                     this.key = "FF32AE65FBFD19414EAAFF6291A54B42";
                     this.v = "3.11.26";
                     this.src = "weixinapp_cx";
@@ -664,7 +693,11 @@
                         .join("&");
                 }
 
-                async _request({ Url, Method = "GET", headers = this.headers} = {}) {
+                async _request({
+                    Url,
+                    Method = "GET",
+                    headers = this.headers,
+                } = {}) {
                     try {
                         const res = await fetch(Url, {
                             method: Method,
@@ -997,7 +1030,8 @@
                     `${route.lineCode}路 ${route.lineName}`;
                 card.querySelector(".current-station").textContent =
                     `当前站台: ${route.stationindex}-${route.stationname}`;
-                card.querySelector(".tips").textContent = "温馨提示: "+route.tip;
+                card.querySelector(".tips").textContent =
+                    "温馨提示: " + route.tip;
 
                 const strip = card.querySelector(".strip");
                 const content = card.querySelector(".content");
@@ -1148,9 +1182,24 @@
                 errMsg: document.getElementById("error-msg"),
                 header: document.getElementById("line-info-header"),
                 headerTitle: document.getElementById("info-line-name"),
+                btnCopy: document.getElementById("btn-copy"),
             };
 
             let refreshTimer = null;
+            async function copyToClipboard() {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    const originalText = dom.btnCopy.textContent;
+                    dom.btnCopy.textContent = "已复制！";
+                    dom.btnCopy.style.background = "#10b981"; // 变绿反馈
+                    setTimeout(() => {
+                        dom.btnCopy.textContent = originalText;
+                        dom.btnCopy.style.background = "#0ea5e9";
+                    }, 2000);
+                } catch (err) {
+                    alert("复制失败，请手动复制地址栏链接");
+                }
+            }
 
             // 工具：防抖函数
             function debounce(func, wait) {
@@ -1242,6 +1291,14 @@
                 if (!config.city || !config.line || !config.station)
                     return showError("请完整填写信息");
 
+                const url = new URL(window.location);
+                url.searchParams.set("city", config.city);
+                url.searchParams.set("line", config.line);
+                url.searchParams.set("station", config.station);
+                url.searchParams.set("reverse", config.reverse);
+
+                // 使用 replaceState 不会产生多余的历史记录，方便用户直接回退
+                window.history.replaceState({}, "", url.toString());
                 // 切换视图
                 dom.form.classList.add("hidden");
                 dom.view.classList.remove("hidden");
@@ -1292,13 +1349,13 @@
             ); // Checkbox 立即触发
             dom.btnStart.addEventListener("click", startTracking);
             dom.btnStop.addEventListener("click", stopTracking);
-
+            dom.btnCopy.addEventListener("click", copyToClipboard);
             // 4. URL 参数初始化逻辑
             async function initFromUrl() {
                 const params = new URLSearchParams(window.location.search);
                 const pCity = params.get("city");
                 const pLine = params.get("line");
-                const pStation = params.get("station"); 
+                const pStation = params.get("station");
                 const pRev = params.get("reverse");
 
                 if (pCity && pLine) {
