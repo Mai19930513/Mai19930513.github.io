@@ -33,16 +33,14 @@
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
                 position: relative;
             }
+            /* 第二行：更新时间右对齐 */
             .card .card-update-time {
                 display: block;
-                text-align: right;
+                text-align: right; /* 右对齐 */
                 color: #9ed7ff;
-                padding: 4px 8px;
-                border-radius: 6px;
-                font-size: 15px;
-                margin-right: 10px;
                 font-size: 11px;
-                margin-bottom: 6px;
+                margin: 0 0 8px 0;
+                padding: 0;
             }
             .card-head {
                 align-items: center;
@@ -54,28 +52,31 @@
                 flex-direction: column;
                 gap: 4px;
             }
+            /* 第一行：标题居中 */
             .line-title {
                 font-weight: bold;
                 font-size: 20px;
                 color: #67e8f9;
-                flex: 0 0 auto;
-                margin: 0 auto;
+                text-align: center; /* 居中 */
+                display: block;
+                width: 100%;
                 white-space: nowrap;
+                margin-bottom: 4px;
             }
+            /* 第三、四行：左对齐 */
             .current-station {
                 font-size: 16px;
-                flex: 0 0 auto;
                 color: #67e8f9;
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
+                text-align: left; /* 左对齐 */
+                display: block;
+                margin-bottom: 4px;
             }
             .tips {
-                font-size: 17px;
-                flex: 0 0 auto;
+                font-size: 15px;
                 color: #0c9ffb;
-                margin: 5px 0 5px 0;
+                text-align: left; /* 左对齐 */
+                display: block;
+                margin: 5px 0 10px 0;
             }
             .strip-wrap {
                 position: relative;
@@ -472,7 +473,31 @@
                 padding: 8px 16px;
                 font-size: 14px;
             }
-
+            #mount {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            /* 卡片标题栏增加删除按钮 */
+            .card-header-wrapper {
+                position: relative;
+                display: block;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+            .btn-remove {
+                position: absolute;
+                top: 0;
+                right: 0;
+                background: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 12px;
+                cursor: pointer;
+                z-index: 10;
+            }
             /* 手机端按钮并排处理 */
             @media (max-width: 480px) {
                 .btn-back,
@@ -534,13 +559,6 @@
                         >
                             <input type="checkbox" id="input-reverse" />
                             <label for="input-reverse">反向</label>
-                        </div>
-                        <!-- 新增 JSON 选项 -->
-                        <div
-                            style="display: flex; align-items: center; gap: 8px"
-                        >
-                            <input type="checkbox" id="input-json" />
-                            <label for="input-json">直接输出JSON</label>
                         </div>
                     </div>
                 </div>
@@ -1000,22 +1018,22 @@
                 return sx(xs, from) + (sx(xs, to) - sx(xs, from)) * p;
             };
 
-            const ensureCard = (route, mount) => {
-                let card = document.getElementById(`card-${route.lineCode}`);
+            const ensureCard = (route, mount, configKey) => {
+                let card = document.getElementById(`card-${configKey}`);
                 if (!card) {
                     card = document.createElement("section");
-                    card.id = `card-${route.lineCode}`;
+                    card.id = `card-${configKey}`;
                     card.className = "card";
                     card.innerHTML = `
-            
-            <div class="card-head">
-                <div class="line-container">
-                    <div class="line-title"></div>
-                    <div class="card-update-time"></div>
-                    <div class="current-station"></div>
-                    <div class="tips"></div>
-                </div>
-            </div>
+ <div class="card-header-wrapper">
+        <div class="line-container">
+            <div class="line-title"></div>
+            <div class="card-update-time"></div>
+            <div class="current-station"></div>
+            <div class="tips"></div>
+        </div>
+        <button class="btn-remove" onclick="removeCard('${configKey}')">删除</button>
+    </div>
             <div class="strip-wrap">
                 <button class="btn left">&lt;</button>
                 <div class="strip">
@@ -1044,7 +1062,7 @@
             <div class="list-header">
                 <div class="cell">车牌号</div>
                 <div class="cell">下一站</div>
-                <div class="cell">距离</div>
+                <div class="cell">剩余距离</div>
             </div>
             <ul class="bus-list miss-list"></ul>
         `;
@@ -1057,7 +1075,7 @@
                 }
                 return card;
             };
-            const updateCard = (route, card) => {
+            const updateCard = (route, card, configKey) => {
                 // Basic Info
                 card.querySelector(".card-update-time").textContent =
                     `更新于: ${route.updatetime}`;
@@ -1094,19 +1112,24 @@
 
                     // --- 点击处理逻辑 ---
                     const handleStationClick = () => {
-                        if (dom.inputStation.value === s.name) return; // 已经是当前站则跳过
+                        // 1. 在多线路数组中找到当前线路的配置
+                        const config = monitoredConfigs.find(
+                            (c) =>
+                                `${c.city}-${c.line}-${c.reverse}` ===
+                                configKey,
+                        );
 
-                        // 1. 更新下拉框的值
-                        dom.inputStation.value = s.name;
+                        if (config) {
+                            // 2. 更新该线路关注的站名
+                            config.station = s.name;
 
-                        // 2. 静默更新 URL 参数
-                        const url = new URL(window.location);
-                        url.searchParams.set("station", s.name);
-                        window.history.replaceState({}, "", url.toString());
+                            // 3. 更新 URL
+                            updateUrl();
 
-                        // 3. 立即触发一次数据刷新（调用后面暴露的接口）
-                        if (window.triggerManualRefresh) {
-                            window.triggerManualRefresh();
+                            // 4. 立即触发一次局部刷新（静默更新）
+                            if (window.triggerManualRefresh) {
+                                window.triggerManualRefresh();
+                            }
                         }
                     };
                     // 为圆点添加点击
@@ -1163,8 +1186,8 @@
                             metroContainer.appendChild(metroSpan);
                         });
                         name.appendChild(metroContainer);
-                        name.style.cursor = "pointer";
                     }
+                    name.style.cursor = "pointer";
                     name.onclick = handleStationClick;
                     namesEl.appendChild(name);
                 });
@@ -1238,7 +1261,7 @@
                                         <div class="dist">${b.distanceToSc}米</div>
                                     </div>
                                 </div>
-                                <div class="cell cell-3" style="color: #67e8f9; font-weight:bold;">${b.recommTip}</div>
+                                <div class="cell cell-3" style="">${b.recommTip}</div>
                             </li>`;
                             } else {
                                 // --- 已过站渲染逻辑 (表头: 车牌 | 下一站 | 距离) ---
@@ -1277,11 +1300,10 @@
                 header: document.getElementById("line-info-header"),
                 headerTitle: document.getElementById("info-line-name"),
                 btnCopy: document.getElementById("btn-copy"),
-                inputJson: document.getElementById("input-json"),
-                jsonDisplay: document.getElementById("json-display"),
             };
 
             let refreshTimer = null;
+            let monitoredConfigs = [];
             async function copyToClipboard() {
                 try {
                     await navigator.clipboard.writeText(window.location.href);
@@ -1370,117 +1392,97 @@
 
             // 2. 启动/停止监控
             function stopTracking() {
-                if (refreshTimer) clearInterval(refreshTimer);
                 dom.view.classList.add("hidden");
                 dom.form.classList.remove("hidden");
-                dom.mount.innerHTML = ""; // 清空旧卡片
             }
 
+            // 删除某个线路
+            window.removeCard = (key) => {
+                monitoredConfigs = monitoredConfigs.filter(
+                    (c) => `${c.city}-${c.line}-${c.reverse}` !== key,
+                );
+                const card = document.getElementById(`card-${key}`);
+                if (card) card.remove();
+                updateUrl();
+                if (monitoredConfigs.length === 0) {
+                    if (refreshTimer) clearInterval(refreshTimer);
+                    stopTracking();
+                }
+            };
+
+            // 更新 URL，支持多线路分享
+            function updateUrl() {
+                const url = new URL(window.location);
+                // 将配置数组转为 base64 或者是简写的查询字符串
+                if (monitoredConfigs.length > 0) {
+                    const data = monitoredConfigs
+                        .map(
+                            (c) =>
+                                `${c.city}|${c.line}|${c.station}|${c.reverse}`,
+                        )
+                        .join(";");
+                    url.searchParams.set("m", data);
+                } else {
+                    url.searchParams.delete("m");
+                }
+                // 清除单线路旧参数
+                url.searchParams.delete("city");
+                url.searchParams.delete("line");
+                url.searchParams.delete("station");
+                url.searchParams.delete("reverse");
+                window.history.replaceState({}, "", url.toString());
+            }
             async function startTracking() {
-                const config = {
+                const formConfig = {
                     city: dom.inputCity.value.trim(),
                     line: dom.inputLine.value.trim(),
                     reverse: dom.inputReverse.checked ? "1" : "0",
                     station: dom.inputStation.value,
-                    outputJson: dom.inputJson.checked,
                 };
 
-                if (!config.city || !config.line || !config.station)
-                    return showError("请完整填写信息");
-
-                const url = new URL(window.location);
-                url.searchParams.set("city", config.city);
-                url.searchParams.set("line", config.line);
-                url.searchParams.set("station", config.station);
-                url.searchParams.set("reverse", config.reverse);
-                if (config.outputJson) url.searchParams.set("json", "1");
-                // 使用 replaceState 不会产生多余的历史记录，方便用户直接回退
-                window.history.replaceState({}, "", url.toString());
-                if (config.outputJson) {
-                    showError("正在获取 JSON 数据...");
-                    try {
-                        const data = await cl.getTripInfo(
-                            config.city,
-                            config.line,
-                            config.reverse,
-                            config.station,
-                        );
-                        // 彻底清除页面所有界面，只显示纯文本 JSON
-                        document.body.innerHTML = "";
-                        document.body.style.background = "#ffffff";
-                        document.body.style.color = "#000000";
-                        document.body.style.padding = "20px";
-                        document.body.style.margin = "0";
-
-                        const pre = document.createElement("pre");
-                        pre.style.whiteSpace = "pre-wrap";
-                        pre.style.wordBreak = "break-all";
-                        pre.textContent = JSON.stringify(data, null, 4);
-                        document.body.appendChild(pre);
-
-                        // 停止 JS 后续逻辑（因为界面已销毁）
-                        if (refreshTimer) clearInterval(refreshTimer);
-                        return;
-                    } catch (e) {
-                        document.body.innerText = "Error: " + e.message;
-                        return;
+                if (formConfig.city && formConfig.line && formConfig.station) {
+                    monitoredConfigs = [];
+                    dom.mount.innerHTML = "";
+                    const isDuplicate = monitoredConfigs.some(
+                        (c) =>
+                            c.city === formConfig.city &&
+                            c.line === formConfig.line &&
+                            c.reverse === formConfig.reverse,
+                    );
+                    if (!isDuplicate) {
+                        monitoredConfigs.push(formConfig);
                     }
                 }
+                if (monitoredConfigs.length === 0) {
+                    return showError("请先完整填写线路信息或通过链接访问");
+                }
+                updateUrl();
                 // 切换视图
                 dom.form.classList.add("hidden");
                 dom.view.classList.remove("hidden");
-
-                if (config.outputJson) {
-                    dom.mount.classList.add("hidden");
-                    dom.jsonDisplay.classList.remove("hidden");
-                    dom.jsonDisplay.textContent = "正在获取数据...";
-                } else {
-                    dom.mount.classList.remove("hidden");
-                    dom.jsonDisplay.classList.add("hidden");
-                    dom.mount.innerHTML =
-                        '<div style="text-align:center;padding:20px;color:#94a3b8;">正在连接数据...</div>';
-                }
+                dom.mount.innerHTML = "";
                 // 运行循环
                 const loop = async () => {
-                    const currentStation = dom.inputStation.value;
-                    try {
-                        const data = await cl.getTripInfo(
-                            config.city,
-                            config.line,
-                            config.reverse,
-                            currentStation,
-                        );
-                        if (data) {
-                            if (config.outputJson) {
-                                // JSON 模式：直接序列化并显示
-                                dom.jsonDisplay.textContent = JSON.stringify(
+                    for (const config of monitoredConfigs) {
+                        const configKey = `${config.city}-${config.line}-${config.reverse}`;
+                        try {
+                            const data = await cl.getTripInfo(
+                                config.city,
+                                config.line,
+                                config.reverse,
+                                config.station,
+                            );
+                            if (data) {
+                                const card = ensureCard(
                                     data,
-                                    null,
-                                    4,
+                                    dom.mount,
+                                    configKey,
                                 );
-                            } else {
-                                // 图形模式
-                                const card = ensureCard(data, dom.mount);
-                                if (
-                                    dom.mount.textContent.includes("正在连接")
-                                ) {
-                                    const loading = Array.from(
-                                        dom.mount.childNodes,
-                                    ).find(
-                                        (n) =>
-                                            n.nodeType === 3 ||
-                                            n.tagName === "DIV",
-                                    );
-                                    if (loading && loading.className !== "card")
-                                        loading.remove();
-                                }
-                                updateCard(data, card);
+                                updateCard(data, card, configKey);
                             }
+                        } catch (e) {
+                            console.error(`加载 ${configKey} 失败:`, e);
                         }
-                    } catch (e) {
-                        if (config.outputJson)
-                            dom.jsonDisplay.textContent = "错误: " + e.message;
-                        console.error(e);
                     }
                 };
                 window.triggerManualRefresh = loop;
@@ -1503,54 +1505,101 @@
             // 4. URL 参数初始化逻辑
             async function initFromUrl() {
                 const params = new URLSearchParams(window.location.search);
-                const pCity = params.get("city");
-                const pLine = params.get("line");
-                const pStation = params.get("station");
-                const pRev = params.get("reverse");
-                const pJson = params.get("json");
-                if (pCity && pLine) {
-                    // 1. 填充表单
-                    dom.inputCity.value = pCity;
-                    dom.inputLine.value = pLine;
-                    if (pRev === "1") dom.inputReverse.checked = true;
-                    if (pJson === "1") dom.inputJson.checked = true;
-                    // 2. 主动调用查询，并等待网络请求结束 (关键步骤)
-                    // 注意：这里必须 await，否则下拉框还没数据就去选站点会失败
-                    const success = await fetchLineStations(false);
+                const multiData = params.get("m");
+                if (multiData) {
+                    showError("正在初始化多线路...");
+                    const configs = multiData.split(";");
 
-                    if (success && pStation) {
-                        // 3. 智能匹配站点 (支持 URL 仅输入关键词)
-                        let matchedValue = "";
-                        const options = Array.from(dom.inputStation.options);
+                    for (const item of configs) {
+                        const parts = item.split("|");
+                        if (parts.length < 3) continue;
+                        let city = parts[0];
+                        let line = parts[1];
+                        let station = parts[2]; // 这里使用 let，允许后面修改
+                        let reverse = parts[3] || "0";
 
-                        const stationIdx = parseInt(pStation);
-                        if (
-                            !isNaN(stationIdx) &&
-                            stationIdx > 0 &&
-                            stationIdx <= options.length
-                        ) {
-                            // 如果是数字，直接取对应的 Option
-                            matchedValue = options[stationIdx - 1].value;
-                        } else {
-                            // 如果是文字，执行模糊匹配
-                            const exact = options.find(
-                                (opt) => opt.value === pStation,
-                            );
-                            const partial = options.find((opt) =>
-                                opt.value.includes(pStation),
-                            );
-                            matchedValue = exact
-                                ? exact.value
-                                : partial
-                                  ? partial.value
-                                  : "";
+                        const isIndex =
+                            !isNaN(parseInt(station)) && station.length < 3;
+                        if (isIndex) {
+                            try {
+                                const cityId = await cl.getCityIdByName(city);
+                                const lineInfo = await cl.getLineInfoByName(
+                                    cityId,
+                                    line,
+                                    reverse,
+                                );
+                                const detail = await cl.getBusInfoByLineId(
+                                    cityId,
+                                    lineInfo.lineId,
+                                );
+                                const idx = parseInt(station);
+                                // 转换为真实站名
+                                if (detail.data.stations[idx]) {
+                                    station = detail.data.stations[idx].sn;
+                                }
+                            } catch (e) {
+                                console.error("转换站点索引失败", e);
+                            }
                         }
 
-                        if (matchedValue) {
-                            dom.inputStation.value = matchedValue;
-                            startTracking(); // 自动开始
-                        } else {
-                            showError(`未能识别站点 "${pStation}"，请手动选择`);
+                        monitoredConfigs.push({ city, line, station, reverse });
+                    }
+                    if (monitoredConfigs.length > 0) {
+                        // 直接开始监控，不填表单
+                        startTracking();
+                    }
+                } else {
+                    const pCity = params.get("city");
+                    const pLine = params.get("line");
+                    const pStation = params.get("station");
+                    const pRev = params.get("reverse") || "0";
+                    if (pCity && pLine) {
+                        // 1. 填充表单
+                        dom.inputCity.value = pCity;
+                        dom.inputLine.value = pLine;
+                        if (pRev === "1") dom.inputReverse.checked = true;
+                        // 2. 主动调用查询，并等待网络请求结束 (关键步骤)
+                        // 注意：这里必须 await，否则下拉框还没数据就去选站点会失败
+                        const success = await fetchLineStations(false);
+
+                        if (success && pStation) {
+                            // 3. 智能匹配站点 (支持 URL 仅输入关键词)
+                            let matchedValue = "";
+                            const options = Array.from(
+                                dom.inputStation.options,
+                            );
+
+                            const stationIdx = parseInt(pStation);
+                            if (
+                                !isNaN(stationIdx) &&
+                                stationIdx > 0 &&
+                                stationIdx <= options.length
+                            ) {
+                                // 如果是数字，直接取对应的 Option
+                                matchedValue = options[stationIdx - 1].value;
+                            } else {
+                                // 如果是文字，执行模糊匹配
+                                const exact = options.find(
+                                    (opt) => opt.value === pStation,
+                                );
+                                const partial = options.find((opt) =>
+                                    opt.value.includes(pStation),
+                                );
+                                matchedValue = exact
+                                    ? exact.value
+                                    : partial
+                                      ? partial.value
+                                      : "";
+                            }
+
+                            if (matchedValue) {
+                                dom.inputStation.value = matchedValue;
+                                startTracking(); // 自动开始
+                            } else {
+                                showError(
+                                    `未能识别站点 "${pStation}"，请手动选择`,
+                                );
+                            }
                         }
                     }
                 }
