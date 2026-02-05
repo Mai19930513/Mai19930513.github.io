@@ -646,10 +646,10 @@
             // 车来了 API 封装
             class CheLaile {
                 constructor() {
-                    const PROXY_HOST = "http://localhost:3000";
-                    this.citylist_url = `https://web.chelaile.net.cn/cdatasource/citylist`;
-                    this.lineDetail = `https://cdn.web.chelaileapp.cn/api/bus/line!encryptedLineDetail.action`;
-                    this.queryLineUrl = `https://web.chelaile.net.cn/api/bus/query!nSearch.action`;
+                    const PROXY_BASE = "https://chelaile.zard1028.workers.dev/proxy/";
+                    this.citylist_url = PROXY_BASE+"http://web.chelaile.net.cn/cdatasource/citylist";
+                    this.lineDetail = PROXY_BASE+"http://cdn.web.chelaileapp.cn/api/bus/line!encryptedLineDetail.action";
+                    this.queryLineUrl = PROXY_BASE+"http://web.chelaile.net.cn/api/bus/query!nSearch.action";
                     this.key = "FF32AE65FBFD19414EAAFF6291A54B42";
                     this.v = "3.11.26";
                     this.src = "weixinapp_cx";
