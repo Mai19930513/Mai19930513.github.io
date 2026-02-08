@@ -1059,16 +1059,10 @@
             // 车来了 API 封装
             class CheLaile {
                 constructor() {
-                    const PROXY_BASE = "https://bus-proxy.netlify.app/proxy/";
-                    this.citylist_url =
-                        PROXY_BASE +
-                        "http://web.chelaile.net.cn/cdatasource/citylist";
-                    this.lineDetail =
-                        PROXY_BASE +
-                        "http://cdn.web.chelaileapp.cn/api/bus/line!encryptedLineDetail.action";
-                    this.queryLineUrl =
-                        PROXY_BASE +
-                        "http://web.chelaile.net.cn/api/bus/query!nSearch.action";
+                    const PROXY_BASE = "https://real-time-bus.netlify.app/proxy";
+                    this.citylist_url =PROXY_BASE +"/api/citylist";
+                    this.lineDetail =PROXY_BASE +"/api/LineDetail";
+                    this.queryLineUrl =PROXY_BASE +"/api/Search";
                     this.key = "FF32AE65FBFD19414EAAFF6291A54B42";
                     this.v = "3.11.26";
                     this.src = "weixinapp_cx";
@@ -2245,3 +2239,4 @@
         </script>
     </body>
 </html>
+
